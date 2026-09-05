@@ -95,7 +95,6 @@ jobs:
         id: build-and-push
         uses: docker/bake-action@v7
         with:
-          workdir: main
           files: |
             ./docker-bake.hcl
             cwd://${{ steps.meta-timekeeper.outputs.bake-file }}
