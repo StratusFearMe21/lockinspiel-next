@@ -34,11 +34,6 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-            path: main
-
       - name: Checkout Helm charts Repository
         if: github.event_name != 'pull_request'
         uses: actions/checkout@v4
@@ -55,8 +50,8 @@ jobs:
         with:
           cosign-release: "v2.2.4"
 
-      - name: Set up Depot
-        uses: depot/setup-action@v1 # v3.0.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
       # Login against a Docker registry except on PR
       # https://github.com/docker/login-action
@@ -98,7 +93,7 @@ jobs:
       # https://github.com/docker/bake-action
       - name: Build and push Docker image
         id: build-and-push
-        uses: depot/bake-action@v1
+        uses: docker/bake-action@v7
         with:
           workdir: main
           files: |
@@ -107,7 +102,6 @@ jobs:
             cwd://${{ steps.meta-user.outputs.bake-file }}
             cwd://${{ steps.meta-timesync.outputs.bake-file }}
           push: ${{ github.event_name != 'pull_request' }}
-          project: nd440ccfvs
           targets: default
 
       # Sign the resulting Docker image digest except on PRs.
