@@ -1,0 +1,57 @@
+openapi: 3.1.0
+info:
+  title: Lockinspiel Timesync API
+  version: 0.1.0
+  description: |
+    Returns server receive and response-generation timestamps for clock
+    synchronization. Timestamps are integer microseconds since the Unix epoch.
+
+    This documents GET / as the conventional endpoint. The current TCP server
+    does not parse or validate HTTP methods, paths, or headers; it responds when
+    the accumulated request buffer ends with the HTTP header terminator.
+    Send a bodyless HTTP/1.1 request with headers fitting within 2048 bytes.
+    Authentication is not required by this service.
+security: []
+paths:
+  /:
+    get:
+      operationId: timeSync
+      summary: Get server timestamps for clock synchronization
+      description: |
+        Record the client send and receive times locally and use these server
+        timestamps to estimate clock offset and round-trip network delay.
+        No request parameters or body are needed.
+      responses:
+        "200":
+          description: |
+            Server timestamps encoded as a JSON object. The current implementation
+            omits the Content-Type header even though the payload is JSON.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeSyncResponse"
+              example:
+                n2: 1788600000000000
+                n3: 1788600000000005
+components:
+  schemas:
+    TimeSyncResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - n2
+        - n3
+      properties:
+        n2:
+          type: integer
+          minimum: 0
+          description: |
+            Server Unix time in microseconds sampled after detecting the complete
+            request headers in the read buffer.
+        n3:
+          type: integer
+          minimum: 0
+          description: |
+            Server Unix time in microseconds sampled while constructing the
+            response, before writing it to the socket. This uses the system wall
+            clock, so clock adjustments can affect the ordering of timestamps.

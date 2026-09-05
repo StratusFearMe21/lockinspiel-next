@@ -21,7 +21,7 @@ pub async fn post_timer(
     Json(timesheet_data): Json<InsertableTimer>,
 ) -> Result<Json<Timer>, error::EyreError> {
     let Some(user_id) = db.user.map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
+        return Err(eyre!("You need to be logged in to create a timer"))
             .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
@@ -80,6 +80,11 @@ pub async fn modify_timer(
     mut db: DatabaseConnection,
     Json(timesheet_data): Json<InsertableTimer>,
 ) -> Result<Json<Timer>, error::EyreError> {
+    let Some(user_id) = db.user.map(|u| u.sub) else {
+        return Err(eyre!("You need to be logged in to modify a timer"))
+            .with_status_code(StatusCode::UNAUTHORIZED);
+    };
+
     let time_split_data = TimeSplitData::query()
         .filter(timekeeper::time_split_timer::id.eq(timesheet_data.time_split_timer))
         .get_result(&mut db.connection)
@@ -91,6 +96,8 @@ pub async fn modify_timer(
         .with_status_code(StatusCode::NOT_FOUND)?;
 
     diesel::update(timekeeper::timesheet::table)
+        .filter(timekeeper::timesheet::user_id.eq(user_id))
+        .filter(timekeeper::timesheet::start_time.eq(timesheet_data.start_time))
         .set(timesheet_data.clone())
         .execute(&mut db.connection)
         .await

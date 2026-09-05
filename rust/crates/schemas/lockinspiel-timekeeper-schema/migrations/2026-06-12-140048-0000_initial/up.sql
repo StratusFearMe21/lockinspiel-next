@@ -1,4 +1,4 @@
-GRANT USAGE ON SCHEMA timekeeper TO PUBLIC;
+GRANT USAGE ON SCHEMA timekeeper TO anon;
 
 CREATE OR REPLACE FUNCTION timekeeper.uid()
 RETURNS uuid
@@ -18,7 +18,7 @@ $$;
 
 CREATE TABLE timekeeper.time_split(
     id SERIAL PRIMARY KEY,
-    user_id uuid,
+    user_id uuid NOT NULL,
     name VARCHAR NOT NULL,
     description VARCHAR,
     deleted BOOLEAN NOT NULL DEFAULT false
@@ -133,6 +133,7 @@ CREATE TABLE timekeeper.timesheet(
 CREATE INDEX ON timekeeper.timesheet (user_id, start_time DESC);
 
 GRANT INSERT, SELECT, UPDATE, DELETE ON timekeeper.timesheet TO authenticated;
+GRANT SELECT ON timekeeper.timesheet TO anon;
 
 -- CREATE VIEW timesheet AS
 -- SELECT
@@ -167,9 +168,9 @@ GRANT INSERT, SELECT, UPDATE, DELETE ON timekeeper.timesheet TO authenticated;
 -- USING ( (SELECT timekeeper.uid()) = user_id );
 
 CREATE TABLE timekeeper.tag(
-    id INTEGER PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL UNIQUE,
-    user_id uuid,
+    user_id uuid NOT NULL,
     deleted BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -198,12 +199,12 @@ ON timekeeper.tag FOR DELETE
 TO authenticated
 USING ( timekeeper.uid() = user_id );
 
-INSERT INTO timekeeper.time_split (id, name) VALUES (0, '_paused_');
-INSERT INTO timekeeper.time_split (name, description) VALUES
-    ('Pomodoro', 'Classic, tried, and true'),
-    ('Time Magazine', 'Based on studies'),
-    ('Tyson Split', 'For those with extra dog in ''em'),
-    ('Build Night', 'We burnin'' out tonight baby!');
+INSERT INTO timekeeper.time_split (id, name, user_id) VALUES (0, '_paused_', '00000000-0000-0000-0000-000000000000');
+INSERT INTO timekeeper.time_split (name, description, user_id) VALUES
+    ('Pomodoro', 'Classic, tried, and true', '00000000-0000-0000-0000-000000000000'),
+    ('Time Magazine', 'Based on studies', '00000000-0000-0000-0000-000000000000'),
+    ('Tyson Split', 'For those with extra dog in ''em', '00000000-0000-0000-0000-000000000000'),
+    ('Build Night', 'We burnin'' out tonight baby!', '00000000-0000-0000-0000-000000000000');
 
 INSERT INTO timekeeper.time_split_timer (time_split_id, order_idx, len, name, work) VALUES
     -- Pomodoro
@@ -220,3 +221,5 @@ INSERT INTO timekeeper.time_split_timer (time_split_id, order_idx, len, name, wo
     -- Build Night
     (4, 0, INTERVAL '120 minutes', 'Work', true),
     (4, 1, INTERVAL '10 minutes', 'Break', false);
+
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA timekeeper TO anon;

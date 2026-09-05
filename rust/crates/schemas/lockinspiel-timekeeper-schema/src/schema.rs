@@ -5,7 +5,7 @@ pub mod timekeeper {
         timekeeper.tag (id) {
             id -> Int4,
             name -> Varchar,
-            user_id -> Nullable<Uuid>,
+            user_id -> Uuid,
             deleted -> Bool,
         }
     }
@@ -13,7 +13,7 @@ pub mod timekeeper {
     diesel::table! {
         timekeeper.time_split (id) {
             id -> Int4,
-            user_id -> Nullable<Uuid>,
+            user_id -> Uuid,
             name -> Varchar,
             description -> Nullable<Varchar>,
             deleted -> Bool,

@@ -1,6 +1,0 @@
-name: Staging
-variables:
-  - name: baseUrl
-    value: https://staging.lockinspiel.live
-  - name: authBaseUrl
-    value: https://account-staging.lockinspiel.live

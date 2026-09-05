@@ -27,6 +27,7 @@ pub mod user {
         }
     }
 
+    diesel::joinable!(social_links -> profiles (user_id));
     diesel::joinable!(social_links -> socials (social));
 
     diesel::allow_tables_to_appear_in_same_query!(profiles, social_links, socials,);

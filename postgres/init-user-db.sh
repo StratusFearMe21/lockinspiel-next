@@ -20,8 +20,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 
 	-- RAAAAA ORYYYYYYYYYYY!!!!
 	GRANT ALL PRIVILEGES ON DATABASE docker TO auth_service;
-	-- RAAAAA DRIZZZLLLLEEE!!!!
-	GRANT ALL PRIVILEGES ON DATABASE docker TO timekeeper_service;
+	GRANT CONNECT ON DATABASE docker TO timekeeper_service;
 	GRANT CONNECT ON DATABASE docker TO user_service;
 
 	GRANT pg_monitor TO otelu;

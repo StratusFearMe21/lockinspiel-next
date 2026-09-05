@@ -33,7 +33,9 @@ macro_rules! app_routes {
             ),
             routes!(
                 routes::time_split::create_time_split,
-                routes::time_split::get_time_splits
+                routes::time_split::get_time_splits,
+                routes::time_split::modify_time_split,
+                routes::time_split::delete_time_split,
             ),
         ]
         .into_iter()

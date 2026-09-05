@@ -28,7 +28,7 @@ fn pg_epoch_datetime() -> civil::DateTime {
 
 #[repr(transparent)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "diesel", diesel(sql_type = sql_types::Timestamp))]
 pub struct DateTime(pub civil::DateTime);
 
@@ -84,7 +84,7 @@ impl ToSql<pg::sql_types::Timestamptz, Pg> for DateTime {
 #[repr(transparent)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
 #[cfg_attr(feature = "utoipa", derive(ToSchema))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[cfg_attr(feature = "diesel", diesel(sql_type = sql_types::Interval))]
 #[cfg_attr(feature = "utoipa", schema(value_type = String))]
 pub struct Interval(pub jiff::Span);
@@ -153,7 +153,7 @@ mod serde_jiff_timestamp {
 #[repr(transparent)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
 #[cfg_attr(feature = "utoipa", derive(ToSchema))]
-#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "diesel", diesel(sql_type = sql_types::Timestamp))]
 #[cfg_attr(feature = "utoipa", schema(value_type = i64))]
 /// The returned timestamp is the number of **microseconds** since
@@ -165,7 +165,7 @@ pub struct Timestamp(#[serde(with = "serde_jiff_timestamp")] pub jiff::Timestamp
 #[repr(transparent)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
 #[cfg_attr(feature = "utoipa", derive(ToSchema))]
-#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "diesel", diesel(sql_type = pg::sql_types::Timestamptz))]
 #[cfg_attr(feature = "utoipa", schema(value_type = i64))]
 /// The returned timestamp is the number of **microseconds** since

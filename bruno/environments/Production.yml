@@ -1,6 +1,0 @@
-name: Production
-variables:
-  - name: baseUrl
-    value: https://lockinspiel.live
-  - name: authBaseUrl
-    value: https://account.lockinspiel.live

@@ -85,6 +85,12 @@ impl UserProfileChangeset<'_> {
     }
 }
 
+#[cfg_attr(feature = "utoipa", derive(ToSchema))]
+#[derive(Deserialize, Serialize, Debug, PartialEq)]
+pub struct UserAvatarPutUrl<'a> {
+    pub url: Cow<'a, str>
+}
+
 #[derive(Deserialize, Serialize, ToSchema, Debug)]
 #[cfg_attr(
     feature = "utoipa",
@@ -120,9 +126,9 @@ pub enum UserSchemaResponsesVoid<'a> {
 }
 
 #[derive(IntoResponses, ToSchema)]
-pub enum UserSchemaResponsesString<'a> {
-    #[response(status = 200)]
-    Success(Cow<'a, str>),
+pub enum UserSchemaResponsesUrl<'a> {
+    #[response(status = 200, content_type = "text/plain")]
+    Success(UserAvatarPutUrl<'a>),
     #[response(
         status = "4XX",
         description = "It's your fault"
@@ -206,7 +212,7 @@ pub struct UpdateProfileRoute<'a> {
     tag = "Profile",
     summary = "Replace profile avatar",
     description = "Returns the URL that should be used to upload an image of the user's new avatar",
-    responses(UserSchemaResponsesString),
+    responses(UserSchemaResponsesUrl),
     security(
         ("bearer_jwt" = []),
     )

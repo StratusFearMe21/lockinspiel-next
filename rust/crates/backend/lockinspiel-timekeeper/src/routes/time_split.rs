@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use axum::{Json, http::StatusCode};
+use axum::{Json, extract::Path, http::StatusCode};
 use color_eyre::eyre::{Context, eyre};
 use diesel::{BoolExpressionMethods, ExpressionMethods, HasQuery, QueryDsl, SelectableHelper};
 use diesel_async::RunQueryDsl;
@@ -11,7 +11,8 @@ use lockinspiel_backend_common::{
 use lockinspiel_timekeeper_schema::{
     schema::timekeeper,
     time_split::{
-        CreateTimeSplitRoute, GetTimeSplitsRoute, InsertablePackagedTimeSplit, PackagedTimeSplit,
+        CreateTimeSplitRoute, DeleteTimeSplitRoute, GetTimeSplitsRoute,
+        InsertablePackagedTimeSplit, InsertableTimeSplit, ModifyTimeSplitRoute, PackagedTimeSplit,
         TimeSplit, TimeSplitTimer,
     },
 };
@@ -23,7 +24,7 @@ pub async fn create_time_split<'a>(
     Json(InsertablePackagedTimeSplit { time_split, timers }): Json<InsertablePackagedTimeSplit<'a>>,
 ) -> Result<Json<PackagedTimeSplit<'a>>, error::EyreError> {
     let Some(user_id) = db.user.map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
+        return Err(eyre!("You need to be logged in to create a time split"))
             .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
@@ -116,4 +117,45 @@ pub async fn get_time_splits<'a>(
         .for_each(|(i, child)| grouped[*i].timers.push(child));
 
     Ok(Json(grouped))
+}
+
+#[utoipa_e2e::implementor_of(ModifyTimeSplitRoute)]
+pub async fn modify_time_split<'a>(
+    mut db: DatabaseConnection,
+    Path(id): Path<i32>,
+    Json(time_split): Json<InsertableTimeSplit<'a>>,
+) -> Result<(), error::EyreError> {
+    diesel::update(timekeeper::time_split::table)
+        .filter(timekeeper::time_split::id.eq(id))
+        .set(time_split)
+        .execute(&mut db.connection)
+        .await
+        .wrap_err("Failed to update time split in database")
+        .with_status_code(StatusCode::UNPROCESSABLE_ENTITY)?;
+
+    Ok(())
+}
+
+#[utoipa_e2e::implementor_of(DeleteTimeSplitRoute)]
+pub async fn delete_time_split<'a>(
+    mut db: DatabaseConnection,
+    Path(id): Path<i32>,
+) -> Result<(), error::EyreError> {
+    diesel::update(timekeeper::time_split_timer::table)
+        .filter(timekeeper::time_split_timer::time_split_id.eq(id))
+        .set(timekeeper::time_split_timer::deleted.eq(true))
+        .execute(&mut db.connection)
+        .await
+        .wrap_err("Failed to delete time split timers in database")
+        .with_status_code(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    diesel::update(timekeeper::time_split::table)
+        .filter(timekeeper::time_split::id.eq(id))
+        .set(timekeeper::time_split::deleted.eq(true))
+        .execute(&mut db.connection)
+        .await
+        .wrap_err("Failed to delete time split in database")
+        .with_status_code(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(())
 }

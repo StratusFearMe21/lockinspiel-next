@@ -3,7 +3,9 @@ use std::borrow::Cow;
 #[cfg(feature = "diesel")]
 use crate::schema::timekeeper;
 #[cfg(feature = "diesel")]
-use diesel::{Associations, ExpressionMethods, HasQuery, Identifiable, Insertable, QueryDsl};
+use diesel::{
+    AsChangeset, Associations, ExpressionMethods, HasQuery, Identifiable, Insertable, QueryDsl,
+};
 use jiff::Span;
 use lockinspiel_common_schema::{error::EyreErrorWrapper, sql_types::Interval};
 use serde::{Deserialize, Serialize};
@@ -66,7 +68,7 @@ impl TimeSplitTimer<'_> {
     }
 }
 
-#[cfg_attr(feature = "diesel", derive(Insertable))]
+#[cfg_attr(feature = "diesel", derive(Insertable, AsChangeset))]
 #[cfg_attr(feature = "utoipa", derive(ToSchema))]
 #[cfg_attr(feature = "utoipa", schema(examples(InsertableTimeSplit::placeholder)))]
 #[derive(Deserialize, Serialize, Debug)]
@@ -147,6 +149,22 @@ impl PackagedTimeSplit<'_> {
 }
 
 #[cfg_attr(feature = "utoipa", derive(IntoResponses, ToSchema))]
+pub enum TimeSplitVoidResponses<'a> {
+    #[cfg_attr(feature = "utoipa", response(status = 200))]
+    Success(()),
+    #[cfg_attr(
+        feature = "utoipa",
+        response(status = "4XX", description = "It's your fault")
+    )]
+    YourFault(EyreErrorWrapper<'a>),
+    #[cfg_attr(
+        feature = "utoipa",
+        response(status = "5XX", description = "We're having a skill issue")
+    )]
+    OurFault(EyreErrorWrapper<'a>),
+}
+
+#[cfg_attr(feature = "utoipa", derive(IntoResponses, ToSchema))]
 pub enum TimeSplitArrayResponses<'a> {
     #[cfg_attr(feature = "utoipa", response(status = 200))]
     Success(Vec<PackagedTimeSplit<'a>>),
@@ -209,3 +227,39 @@ pub struct CreateTimeSplitRoute<'a> {
     )
 )]
 pub struct GetTimeSplitsRoute {}
+
+#[derive(IntoPath)]
+#[api_path(
+    put,
+    path = "/timekeeper/time-split/{id}",
+    summary = "Modify a time split",
+    description = "Modifies the fields of the time split at the ID.",
+    tag = "Time split",
+    responses(TimeSplitVoidResponses),
+    security(
+        ("bearer_jwt" = []),
+    )
+)]
+pub struct ModifyTimeSplitRoute<'a> {
+    #[body]
+    pub time_split: InsertableTimeSplit<'a>,
+    #[param(Path)]
+    pub id: i32,
+}
+
+#[derive(IntoPath)]
+#[api_path(
+    delete,
+    path = "/timekeeper/time-split/{id}",
+    summary = "Delete a time split",
+    description = "Deletes the time split at the given ID. This just marks the time split as deleted, and doesn't actually delete the time split in the database. Timers posted with a deleted time split will still have that time split, the time split just won't appear when querying some endpoints.",
+    tag = "Time split",
+    responses(TimeSplitVoidResponses),
+    security(
+        ("bearer_jwt" = []),
+    )
+)]
+pub struct DeleteTimeSplitRoute {
+    #[param(Path)]
+    pub id: i32,
+}

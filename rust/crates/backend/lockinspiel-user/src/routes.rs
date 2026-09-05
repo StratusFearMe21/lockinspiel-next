@@ -14,7 +14,8 @@ use tracing::instrument;
 
 use lockinspiel_user_schema::{
     CreateProfileRoute, DeleteAvatarRoute, GetProfileRoute, InsertableUserProfile, PutAvatarQuery,
-    PutAvatarRoute, UpdateProfileRoute, UserProfile, UserProfileChangeset, schema::user::profiles,
+    PutAvatarRoute, UpdateProfileRoute, UserAvatarPutUrl, UserProfile, UserProfileChangeset,
+    schema::user::profiles,
 };
 use uuid::Uuid;
 
@@ -109,10 +110,12 @@ pub async fn put_avatar(
     State(url_resolver): State<Arc<UrlResolver>>,
     mut db: DatabaseConnection,
     Json(put_avatar_query): Json<PutAvatarQuery<'_>>,
-) -> Result<String, error::EyreError> {
+) -> Result<Json<UserAvatarPutUrl<'static>>, error::EyreError> {
     let Some(user_id) = db.user.as_ref().map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
-            .with_status_code(StatusCode::UNAUTHORIZED);
+        return Err(eyre!(
+            "You need to be logged in to updated your user profile"
+        ))
+        .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
     let current_profile = get_user_profile(&mut db, user_id).await?;
@@ -136,12 +139,16 @@ pub async fn put_avatar(
         .wrap_err("Failed to insert user profile into database")
         .with_status_code(StatusCode::UNPROCESSABLE_ENTITY)?;
 
-    Ok(url_resolver
-        .resolve_put_url(
-            url_location,
-            format!("image/{}", put_avatar_query.file_extension),
-        )
-        .await)
+    Ok(Json(UserAvatarPutUrl {
+        url: Cow::Owned(
+            url_resolver
+                .resolve_put_url(
+                    url_location,
+                    format!("image/{}", put_avatar_query.file_extension),
+                )
+                .await,
+        ),
+    }))
 }
 
 #[utoipa_e2e::implementor_of(DeleteAvatarRoute)]
@@ -151,8 +158,10 @@ pub async fn delete_avatar(
     mut db: DatabaseConnection,
 ) -> Result<(), error::EyreError> {
     let Some(user_id) = db.user.as_ref().map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
-            .with_status_code(StatusCode::UNAUTHORIZED);
+        return Err(eyre!(
+            "You need to be logged in to update your user profile"
+        ))
+        .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
     let current_profile = get_user_profile(&mut db, user_id).await?;
@@ -179,8 +188,10 @@ pub async fn update_profile(
     Json(updated_profile): Json<UserProfileChangeset<'_>>,
 ) -> Result<(), error::EyreError> {
     let Some(user_id) = db.user.map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
-            .with_status_code(StatusCode::UNAUTHORIZED);
+        return Err(eyre!(
+            "You need to be logged in to update your user profile"
+        ))
+        .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
     diesel::update(profiles::table)

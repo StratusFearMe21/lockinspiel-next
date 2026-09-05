@@ -1,0 +1,13 @@
+{
+  "name": "testing",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "openapi-typescript": "^7.13.0"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  }
+}

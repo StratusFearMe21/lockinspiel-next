@@ -1,6 +1,0 @@
-name: Local
-variables:
-  - name: baseUrl
-    value: http://localhost:8000
-  - name: authBaseUrl
-    value: http://localhost:8000

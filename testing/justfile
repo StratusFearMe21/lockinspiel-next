@@ -1,0 +1,4 @@
+create-schema instance-url:
+    bunx openapi-typescript {{ instance-url }}/timekeeper/openapi/json -o types/timekeeper.d.ts
+    bunx openapi-typescript {{ instance-url }}/user/openapi/json -o types/user.d.ts
+    bunx openapi-typescript ../rust/crates/backend/lockinspiel-timesync/openapi.yaml -o types/timesync.d.ts

@@ -1,6 +1,6 @@
 use axum::{Json, extract::Path, http::StatusCode};
 use color_eyre::eyre::{Context, eyre};
-use diesel::{ExpressionMethods, HasQuery, SelectableHelper};
+use diesel::{ExpressionMethods, HasQuery, QueryDsl, SelectableHelper};
 use diesel_async::RunQueryDsl;
 use lockinspiel_backend_common::{
     auth::DatabaseConnection,
@@ -12,6 +12,7 @@ use lockinspiel_timekeeper_schema::{
         CreateTagRoute, DeleteTagRoute, GetTagsRoute, InsertableTag, ModifyTagRoute, Tag, TagID,
     },
 };
+use uuid::Uuid;
 
 #[utoipa_e2e::implementor_of(CreateTagRoute)]
 pub async fn create_tag(
@@ -19,7 +20,7 @@ pub async fn create_tag(
     Json(tag): Json<InsertableTag<'_>>,
 ) -> Result<Json<TagID>, error::EyreError> {
     let Some(user_id) = db.user.map(|u| u.sub) else {
-        return Err(eyre!("You need to be logged in to create a user profile"))
+        return Err(eyre!("You need to be logged in to create a tag"))
             .with_status_code(StatusCode::UNAUTHORIZED);
     };
 
@@ -38,7 +39,10 @@ pub async fn create_tag(
 pub async fn get_tags(
     mut db: DatabaseConnection,
 ) -> Result<Json<Vec<Tag<'static>>>, error::EyreError> {
+    let user_id = db.user.map(|u| u.sub).unwrap_or(Uuid::nil());
+
     let tags = Tag::query()
+        .filter(timekeeper::tag::user_id.eq_any([user_id, Uuid::nil()]))
         .get_results(&mut db.connection)
         .await
         .wrap_err("Failed to grab tags from database")
@@ -69,8 +73,9 @@ pub async fn delete_tag(
     mut db: DatabaseConnection,
     Path(id): Path<i32>,
 ) -> Result<(), error::EyreError> {
-    diesel::delete(timekeeper::tag::table)
+    diesel::update(timekeeper::tag::table)
         .filter(timekeeper::tag::id.eq(id))
+        .set(timekeeper::tag::deleted.eq(true))
         .execute(&mut db.connection)
         .await
         .wrap_err("Failed to update tag in database")
