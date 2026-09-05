@@ -1,1 +1,1 @@
-console.log("Hello via Bun!");
+console.log("Run the service endpoint suite with: bun test");

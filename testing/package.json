@@ -4,10 +4,17 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
     "@types/bun": "latest",
-    "openapi-typescript": "^7.13.0"
+    "openapi-typescript": "^7.13.0",
+    "openapi-typescript-fetch": "^2.2.1",
+    "typescript": "^5"
   },
-  "peerDependencies": {
-    "typescript": "^7"
+  "dependencies": {
+    "@ory/client-fetch": "^1.22.66"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
   }
 }

@@ -175,6 +175,7 @@ CREATE TABLE timekeeper.tag(
 );
 
 GRANT INSERT, SELECT, UPDATE, DELETE ON timekeeper.tag TO authenticated;
+GRANT SELECT ON timekeeper.tag TO anon;
 
 ALTER TABLE timekeeper.tag ENABLE ROW LEVEL SECURITY;
 
